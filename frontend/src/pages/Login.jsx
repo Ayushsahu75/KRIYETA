@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Gem } from "lucide-react";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 
 function Login() {
@@ -30,36 +31,34 @@ function Login() {
   };
 
   return (
-    <div style={{ padding: "40px", maxWidth: "440px", margin: "60px auto", background: "white", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>KRIYETA Login</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          style={{ width: "100%", padding: "12px", marginBottom: "12px", boxSizing: "border-box" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          required
-          style={{ width: "100%", padding: "12px", marginBottom: "12px", boxSizing: "border-box" }}
-        />
-        {error && <p style={{ color: "#c62828" }}>{error}</p>}
-        <button type="submit" style={{ width: "100%", padding: "12px", background: "#333", color: "white", border: 0, cursor: "pointer" }}>
-          Login
-        </button>
-      </form>
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "16px" }}>
-        <GoogleAuthButton onError={setError} />
-      </div>
-      <p style={{ textAlign: "center", marginTop: "16px" }}>
-        New account banani hai? <Link to="/signup">Sign Up</Link>
-      </p>
+    <div className="auth-page">
+      <section className="auth-story">
+        <Link to="/" className="brand" style={{ color: "white" }}><span className="brand-mark"><Gem size={19} /></span>KRIYETA</Link>
+        <div>
+          <h1>Every pledge, clearly accounted.</h1>
+          <p>Manage customers, loans and repayments from one focused workspace.</p>
+        </div>
+        <small>Jewellery finance, thoughtfully managed.</small>
+      </section>
+      <main className="auth-panel">
+        <section className="auth-card">
+          <h2>Welcome back</h2>
+          <p className="auth-subtitle">Sign in to continue to KRIYETA.</p>
+          <form onSubmit={handleSubmit}>
+            <label className="field-label">Email address
+              <input className="form-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            </label>
+            <label className="field-label">Password
+              <input className="form-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} required />
+            </label>
+            {error && <p className="error-message">{error}</p>}
+            <button className="primary-button" type="submit">Sign in</button>
+          </form>
+          <div className="auth-divider">or continue with</div>
+          <div style={{ display: "flex", justifyContent: "center" }}><GoogleAuthButton onError={setError} /></div>
+          <p className="auth-switch">New to KRIYETA? <Link to="/signup">Create an account</Link></p>
+        </section>
+      </main>
     </div>
   );
 }

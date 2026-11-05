@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import { Gem } from "lucide-react";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 
 function Signup() {
@@ -43,54 +44,40 @@ function Signup() {
   };
 
   return (
-    <div style={{ padding: "40px", maxWidth: "440px", margin: "60px auto", background: "white", borderRadius: "12px", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
-      <h2 style={{ textAlign: "center", marginBottom: "20px" }}>KRIYETA Sign Up</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="text"
-          placeholder="Name"
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          required
-          style={{ width: "100%", padding: "12px", marginBottom: "12px", boxSizing: "border-box" }}
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(event) => setEmail(event.target.value)}
-          required
-          style={{ width: "100%", padding: "12px", marginBottom: "12px", boxSizing: "border-box" }}
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          minLength={6}
-          required
-          style={{ width: "100%", padding: "12px", marginBottom: "12px", boxSizing: "border-box" }}
-        />
-        <input
-          type="password"
-          placeholder="Confirm Password"
-          value={confirmPassword}
-          onChange={(event) => setConfirmPassword(event.target.value)}
-          minLength={6}
-          required
-          style={{ width: "100%", padding: "12px", marginBottom: "12px", boxSizing: "border-box" }}
-        />
-        {error && <p style={{ color: "#c62828" }}>{error}</p>}
-        <button type="submit" disabled={loading} style={{ width: "100%", padding: "12px", background: "#333", color: "white", border: 0, cursor: loading ? "not-allowed" : "pointer" }}>
-          {loading ? "Creating account..." : "Sign Up"}
-        </button>
-      </form>
-      <div style={{ display: "flex", justifyContent: "center", marginTop: "16px" }}>
-        <GoogleAuthButton onError={setError} />
-      </div>
-      <p style={{ textAlign: "center", marginTop: "16px" }}>
-        Already have an account? <Link to="/login">Login</Link>
-      </p>
+    <div className="auth-page">
+      <section className="auth-story">
+        <Link to="/" className="brand" style={{ color: "white" }}><span className="brand-mark"><Gem size={19} /></span>KRIYETA</Link>
+        <div>
+          <h1>A clearer way to manage every pledge.</h1>
+          <p>Create your workspace for customers, jewellery loans and repayments.</p>
+        </div>
+        <small>Jewellery finance, thoughtfully managed.</small>
+      </section>
+      <main className="auth-panel">
+        <section className="auth-card">
+          <h2>Create your account</h2>
+          <p className="auth-subtitle">Start managing your KRIYETA workspace.</p>
+          <form onSubmit={handleSubmit}>
+            <label className="field-label">Full name
+              <input className="form-input" type="text" value={name} onChange={(event) => setName(event.target.value)} required />
+            </label>
+            <label className="field-label">Email address
+              <input className="form-input" type="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            </label>
+            <label className="field-label">Password
+              <input className="form-input" type="password" value={password} onChange={(event) => setPassword(event.target.value)} minLength={6} required />
+            </label>
+            <label className="field-label">Confirm password
+              <input className="form-input" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} minLength={6} required />
+            </label>
+            {error && <p className="error-message">{error}</p>}
+            <button className="primary-button" type="submit" disabled={loading}>{loading ? "Creating account..." : "Create account"}</button>
+          </form>
+          <div className="auth-divider">or continue with</div>
+          <div style={{ display: "flex", justifyContent: "center" }}><GoogleAuthButton onError={setError} /></div>
+          <p className="auth-switch">Already have an account? <Link to="/login">Sign in</Link></p>
+        </section>
+      </main>
     </div>
   );
 }
