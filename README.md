@@ -64,14 +64,15 @@ KRIYETA/
 
 ### 1. Configure the backend
 
-Create `backend/.env` with:
+Copy `backend/.env.example` to `backend/.env` and set your values:
 
 ```env
 PORT=5000
 MONGO_URI=your_mongodb_connection_string
 JWT_SECRET=replace_with_a_long_random_secret
 JWT_EXPIRES_IN=7d
-GOOGLE_CLIENT_ID=your_google_oauth_client_id
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
 
 Install dependencies and start the API:
@@ -84,15 +85,9 @@ npm run dev
 
 The API listens on `http://localhost:5000` by default.
 
-### 2. Configure and start the frontend
+### 2. Start the frontend
 
-Create `frontend/.env`:
-
-```env
-VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id
-```
-
-Use the same Google OAuth client ID in both environment files. Add `http://localhost:3000` as an authorized JavaScript origin in the Google Cloud OAuth client settings.
+There is no separate frontend environment file. Vite reads `VITE_GOOGLE_CLIENT_ID` from `backend/.env`; set it to the same Google OAuth client ID as `GOOGLE_CLIENT_ID`. Vite only exposes variables prefixed with `VITE_` to browser code, so keep secrets such as `JWT_SECRET` unprefixed. Add `http://localhost:3000` as an authorized JavaScript origin in the Google Cloud OAuth client settings.
 
 In another terminal:
 

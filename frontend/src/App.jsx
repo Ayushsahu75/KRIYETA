@@ -56,7 +56,7 @@ const Navbar = () => {
 
 function App() {
   const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-  if (!clientId) throw new Error("VITE_GOOGLE_CLIENT_ID is missing from frontend/.env");
+  if (!clientId) throw new Error("VITE_GOOGLE_CLIENT_ID is missing from backend/.env");
 
   return (
     <GoogleOAuthProvider clientId={clientId}>
