@@ -1,10 +1,15 @@
 // src/pages/CustomerList.jsx
 import { useState, useEffect } from "react";
+import { Phone, MapPin, Trash2, Users } from "lucide-react";
 
-function CustomerList() {
+const initials = (name = "") =>
+  name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
+
+export default function CustomerList() {
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading]     = useState(true);
   const [error, setError]         = useState("");
+  const [search, setSearch]       = useState("");
 
   useEffect(() => { fetchCustomers(); }, []);
 
@@ -12,83 +17,96 @@ function CustomerList() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res  = await fetch("http://localhost:5000/api/customers", {
-        headers: { "Authorization": `Bearer ${token}` }
+      const res = await fetch("http://localhost:5000/api/customers", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.status === 401) {
-        
-        window.location.href = "/login";
-        return;
-      }
-
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       if (res.ok) setCustomers(data);
-      else setError("Customers load nahi hue.");
+      else setError("Failed to load clients.");
     } catch {
-      setError("Server se connect nahi ho paya.");
+      setError("Could not connect to server.");
     } finally {
       setLoading(false);
     }
   };
 
   const deleteCustomer = async (id) => {
-    if (!window.confirm("⚠️ Kya aap is customer ko delete karna chahte ho? Isse inke saare loans pe asar pad sakta hai!")) return;
-    
+    if (!window.confirm("Remove this client? Associated loan records may be affected.")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/customers/${id}`, { 
+      const res = await fetch(`http://localhost:5000/api/customers/${id}`, {
         method: "DELETE",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.status === 401) {
-        window.location.href = "/login";
-        return;
-      }
-
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (res.ok) fetchCustomers();
-      else alert("❌ Error deleting customer.");
-    } catch {
-      alert("❌ Server error.");
-    }
+      else alert("Error removing client.");
+    } catch { alert("Server error."); }
   };
 
-  if (loading) return <p style={{ padding: "40px" }}>👥 Loading customer database...</p>;
-  if (error)   return <p style={{ padding: "40px", color: "red" }}>{error}</p>;
+  const filtered = customers.filter((c) =>
+    c.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.phone?.includes(search)
+  );
+
+  if (loading) return <div className="loading-wrap"><div className="spinner" />Loading clients…</div>;
 
   return (
-    <div style={{ maxWidth: "1000px", margin: "0 auto" }}>
-      <h2 style={{ color: "#2c3e50", marginBottom: "25px" }}>👥 Customer Directory</h2>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "20px" }}>
-        {customers.length === 0 ? (
-          <p>No customers registered yet.</p>
-        ) : (
-          customers.map((c) => (
-            <div key={c._id} style={{
-              background: "white", padding: "20px", borderRadius: "12px",
-              boxShadow: "0 2px 12px rgba(0,0,0,0.05)", border: "1px solid #eee",
-              display: "flex", flexDirection: "column"
-            }}>
-              <div style={{ fontSize: "40px", marginBottom: "15px", textAlign: "center" }}>👤</div>
-              <h3 style={{ margin: "0 0 10px 0", textAlign: "center", color: "#333" }}>{c.name}</h3>
-              <p style={{ margin: "5px 0", color: "#666" }}>📞 <strong>Phone:</strong> {c.phone}</p>
-              <p style={{ margin: "5px 0", color: "#666", flexGrow: 1 }}>🏠 <strong>Address:</strong> {c.address || "N/A"}</p>
-              
-              <div style={{ display: "flex", gap: "8px", marginTop: "20px" }}>
-                <button 
-                  onClick={() => deleteCustomer(c._id)}
-                  style={{ flex: 1, padding: "10px", background: "#fee", color: "#e74c3c", border: "1px solid #fcc", borderRadius: "6px", cursor: "pointer", fontWeight: "bold" }}
-                >
-                  🗑️ Delete
+    <div className="page-enter">
+      <div className="page-heading">
+        <div>
+          <h1>Client <span>Directory</span></h1>
+          <p>{customers.length} registered client{customers.length !== 1 ? "s" : ""}</p>
+        </div>
+      </div>
+
+      <div className="control-bar">
+        <input
+          className="search-input"
+          type="text"
+          placeholder="Search by name or phone…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <span className="count-badge">
+          {filtered.length} {filtered.length === 1 ? "client" : "clients"}
+        </span>
+      </div>
+
+      {error && <div className="alert error">{error}</div>}
+
+      {filtered.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon"><Users size={28} strokeWidth={1.2} /></div>
+          <h3>{search ? "No matches found" : "No clients yet"}</h3>
+          <p>{search ? "Try a different search term." : "Register your first client to begin."}</p>
+        </div>
+      ) : (
+        <div className="cards-grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))" }}>
+          {filtered.map((c) => (
+            <div key={c._id} className="customer-card">
+              <div className="customer-avatar">{initials(c.name)}</div>
+              <h3 className="customer-name">{c.name}</h3>
+              <div className="customer-detail">
+                <Phone size={13} strokeWidth={2} />
+                {c.phone}
+              </div>
+              {c.address && (
+                <div className="customer-detail">
+                  <MapPin size={13} strokeWidth={2} />
+                  {c.address}
+                </div>
+              )}
+              <div className="customer-actions">
+                <button className="btn-delete" onClick={() => deleteCustomer(c._id)}>
+                  <Trash2 size={13} /> Remove Client
                 </button>
               </div>
             </div>
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-export default CustomerList;

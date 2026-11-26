@@ -1,210 +1,200 @@
 // src/pages/AddLoan.jsx
 import { useState, useEffect } from "react";
+import { HandCoins, Upload, CheckCircle2 } from "lucide-react";
+import Success3DModal from "../components/Success3DModal";
 
-function AddLoan() {
+export default function AddLoan() {
   const [formData, setFormData] = useState({
-    customerId: "",
-    jewelleryType: "",
-    weight: "",
-    carat: "",
-    amount: "",
-    interestRate: "",
-    startDate: "",
+    customerId: "", jewelleryType: "", weight: "",
+    carat: "", amount: "", interestRate: "", startDate: "",
   });
-
   const [selectedFile, setSelectedFile] = useState(null);
-  const [customers, setCustomers] = useState([]);
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [preview, setPreview]           = useState(null);
+  const [customers, setCustomers]       = useState([]);
+  const [msg, setMsg]                   = useState({ text: "", type: "" });
+  const [loading, setLoading]           = useState(false);
+  const [showSuccess, setShowSuccess]   = useState(false);
 
   useEffect(() => {
-    const fetchCustomers = async () => {
+    (async () => {
       try {
         const token = localStorage.getItem("token");
         const res = await fetch("http://localhost:5000/api/customers", {
-          headers: { "Authorization": `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         });
-
-        if (res.status === 401) {
-          window.location.href = "/login";
-          return;
-        }
-
-        const data = await res.json();
-        setCustomers(data);
-      } catch (err) {
-        console.error("Customers fetch failed");
-      }
-    };
-    fetchCustomers();
+        if (res.status === 401) { window.location.href = "/login"; return; }
+        setCustomers(await res.json());
+      } catch { /* silent */ }
+    })();
   }, []);
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
+
+  const handleFile = (e) => {
+    const f = e.target.files[0];
+    setSelectedFile(f);
+    setPreview(f ? URL.createObjectURL(f) : null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMsg({ text: "", type: "" });
 
     try {
       const data = new FormData();
-      Object.keys(formData).forEach(key => data.append(key, formData[key]));
+      Object.keys(formData).forEach((k) => data.append(k, formData[k]));
       if (selectedFile) data.append("image", selectedFile);
 
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/loans", {
+      const res = await fetch("http://localhost:5000/api/loans", {
         method: "POST",
-        headers: { "Authorization": `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` },
         body: data,
       });
+      if (res.status === 401) { window.location.href = "/login"; return; }
+      const result = await res.json();
 
-      if (response.status === 401) {
-        window.location.href = "/login";
-        return;
-      }
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage("✅ Loan entry created successfully!");
-        setFormData({
-          customerId: "", jewelleryType: "", weight: "", carat: "",
-          amount: "", interestRate: "", startDate: ""
-        });
+      if (res.ok) {
+        setShowSuccess(true);
+        setFormData({ customerId: "", jewelleryType: "", weight: "", carat: "", amount: "", interestRate: "", startDate: "" });
         setSelectedFile(null);
+        setPreview(null);
       } else {
-        setMessage(`❌ Error: ${result.message}`);
+        setMsg({ text: result.message || "Failed to create entry.", type: "error" });
       }
-    } catch (error) {
-      setMessage("❌ Failed to reach server.");
+    } catch {
+      setMsg({ text: "Could not reach server.", type: "error" });
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div style={{ padding: "20px", maxWidth: "600px", margin: "0 auto", background: "white", borderRadius: "15px", boxShadow: "0 4px 20px rgba(0,0,0,0.08)" }}>
-      <h2 style={{ color: "#2c3e50", textAlign: "center", marginBottom: "30px" }}>➕ New Girvi Registration</h2>
+    <div className="form-page page-enter">
+      {/* 3D Success Popup Animation */}
+      <Success3DModal
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Loan Record Created!"
+        subtitle="The jewellery pledge record has been securely saved to the ledger."
+      />
 
-      {message && (
-        <div style={{ 
-          padding: "15px", borderRadius: "8px", marginBottom: "20px", 
-          textAlign: "center", backgroundColor: message.startsWith("✅") ? "#e8f5e9" : "#ffebee",
-          color: message.startsWith("✅") ? "#2e7d32" : "#c62828",
-          fontWeight: "bold"
-        }}>
-          {message}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px" }}>
-        {/* Customer Select */}
-        <div style={{ gridColumn: "span 2" }}>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>👤 Select Customer:</label>
-          <select
-            name="customerId"
-            value={formData.customerId}
-            onChange={handleChange}
-            required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }}
-          >
-            <option value="">-- Choose Customer --</option>
-            {customers.map((c) => (
-              <option key={c._id} value={c._id}>
-                {c.name} ({c.phone})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Jewellery Details */}
+      <div className="page-heading" style={{ marginBottom: 32 }}>
         <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>💍 Item Type:</label>
-          <input type="text" name="jewelleryType" value={formData.jewelleryType}
-            onChange={handleChange} placeholder="e.g. Ring" required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }} />
+          <h1>New Loan <span>Entry</span></h1>
+          <p>Register a new girvi or pledge record</p>
         </div>
+      </div>
 
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>⚖️ Weight (g):</label>
-          <input type="number" name="weight" value={formData.weight}
-            onChange={handleChange} placeholder="0.00" required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }} />
-        </div>
-
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>🥇 Purity (Carat):</label>
-          <input type="number" name="carat" value={formData.carat}
-            onChange={handleChange} placeholder="22" required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }} />
-        </div>
-
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>📅 Start Date:</label>
-          <input type="date" name="startDate" value={formData.startDate}
-            onChange={handleChange} required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }} />
-        </div>
-
-        {/* Financials */}
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>💰 Principal Amount (₹):</label>
-          <input type="number" name="amount" value={formData.amount}
-            onChange={handleChange} placeholder="10000" required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }} />
-        </div>
-
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>📈 Interest Rate (%):</label>
-          <input type="number" name="interestRate" value={formData.interestRate}
-            onChange={handleChange} placeholder="2" required
-            style={{ width: "100%", padding: "12px", borderRadius: "8px", border: "1px solid #ddd" }} />
-        </div>
-
-        {/* Upload */}
-        <div style={{ gridColumn: "span 2" }}>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>📸 Photo Attachment:</label>
-          <div style={{ 
-            border: "2px dashed #ddd", padding: "20px", borderRadius: "10px", 
-            textAlign: "center", position: "relative", cursor: "pointer",
-            backgroundColor: "#fafafa"
-          }}>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={(e) => setSelectedFile(e.target.files[0])}
-              style={{ opacity: 0, position: "absolute", top: 0, left: 0, width: "100%", height: "100%", cursor: "pointer" }}
-            />
-            {selectedFile ? (
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "10px" }}>
-                <span>📎 {selectedFile.name}</span>
-                <img src={URL.createObjectURL(selectedFile)} alt="preview" style={{ width: "50px", borderRadius: "4px" }} />
-              </div>
-            ) : (
-              <span style={{ color: "#888" }}>📁 Click or drag image to upload</span>
-            )}
+      <div className="form-card">
+        {msg.text && (
+          <div className={`alert ${msg.type}`}>
+            {msg.type === "success" && <CheckCircle2 size={16} />}
+            {msg.text}
           </div>
-        </div>
+        )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            gridColumn: "span 2",
-            padding: "16px",
-            backgroundColor: loading ? "#bdbcbc" : "#4CAF50",
-            color: "white", border: "none", borderRadius: "10px",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontSize: "1.1rem", fontWeight: "bold",
-            marginTop: "10px", boxShadow: "0 4px 10px rgba(76, 175, 80, 0.3)"
-          }}
-        >
-          {loading ? "⌛ Saving Entry..." : "Submit Loan Record"}
-        </button>
-      </form>
+        <form onSubmit={handleSubmit}>
+          {/* ── Client ── */}
+          <p className="form-section-title" style={{ marginBottom: 16 }}>Client</p>
+          <div className="form-grid" style={{ marginBottom: 32 }}>
+            <div className="field-wrapper">
+              <label htmlFor="customerId">Select Client</label>
+              <select id="customerId" name="customerId" value={formData.customerId} onChange={handleChange} required>
+                <option value="">— Choose a registered client —</option>
+                {customers.map((c) => (
+                  <option key={c._id} value={c._id}>{c.name} ({c.phone})</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* ── Jewellery ── */}
+          <p className="form-section-title" style={{ marginBottom: 16 }}>Jewellery Details</p>
+          <div className="form-grid form-grid-2" style={{ marginBottom: 32 }}>
+            <div className="field-wrapper">
+              <label htmlFor="jewelleryType">Item Type</label>
+              <input id="jewelleryType" type="text" name="jewelleryType"
+                value={formData.jewelleryType} onChange={handleChange}
+                placeholder="e.g. Ring, Necklace, Bangle" required />
+            </div>
+            <div className="field-wrapper">
+              <label htmlFor="carat">Purity (Carat)</label>
+              <input id="carat" type="number" name="carat"
+                value={formData.carat} onChange={handleChange} placeholder="22" required />
+            </div>
+            <div className="field-wrapper">
+              <label htmlFor="weight">Weight (grams)</label>
+              <input id="weight" type="number" name="weight" step="0.01"
+                value={formData.weight} onChange={handleChange} placeholder="0.00" required />
+            </div>
+            <div className="field-wrapper">
+              <label htmlFor="startDate">Start Date</label>
+              <input id="startDate" type="date" name="startDate"
+                value={formData.startDate} onChange={handleChange} required />
+            </div>
+          </div>
+
+          {/* ── Financials ── */}
+          <p className="form-section-title" style={{ marginBottom: 16 }}>Financial Terms</p>
+          <div className="form-grid form-grid-2" style={{ marginBottom: 32 }}>
+            <div className="field-wrapper">
+              <label htmlFor="amount">Principal Amount (₹)</label>
+              <input id="amount" type="number" name="amount"
+                value={formData.amount} onChange={handleChange} placeholder="10,000" required />
+            </div>
+            <div className="field-wrapper">
+              <label htmlFor="interestRate">Interest Rate</label>
+              <input id="interestRate" type="number" name="interestRate" step="0.1"
+                value={formData.interestRate} onChange={handleChange} placeholder="2" required />
+              <span className="field-hint">% per month</span>
+            </div>
+          </div>
+
+          {/* ── Photo ── */}
+          <p className="form-section-title" style={{ marginBottom: 16 }}>
+            Photo Attachment
+            <span style={{ fontWeight: 400, textTransform: "none", letterSpacing: 0, fontSize: 11, color: "var(--ink-subtle)", marginLeft: 8 }}>optional</span>
+          </p>
+          <div style={{ marginBottom: 32 }}>
+            <label className="upload-zone" htmlFor="imgUpload">
+              <input id="imgUpload" type="file" accept="image/*" onChange={handleFile} />
+              {preview ? (
+                <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
+                  <img src={preview} alt="preview" style={{
+                    width: 64, height: 64, objectFit: "cover",
+                    borderRadius: 8, border: "1px solid rgba(201,168,76,.4)"
+                  }} />
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 600, color: "var(--gold-dark)" }}>{selectedFile?.name}</div>
+                    <div style={{ fontSize: 11.5, color: "var(--ink-subtle)", marginTop: 2 }}>Click to change</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="upload-label">
+                  <Upload size={24} strokeWidth={1.3} />
+                  <span><strong>Click to upload</strong> or drag &amp; drop</span>
+                  <span>JPG, PNG, WEBP — max 5 MB</span>
+                </div>
+              )}
+            </label>
+          </div>
+
+          <button
+            className="primary-button"
+            type="submit"
+            disabled={loading}
+            style={{ width: "100%", height: 52, fontSize: 12, letterSpacing: "0.16em" }}
+          >
+            {loading ? (
+              <><span className="spinner" style={{ width: 17, height: 17, borderWidth: 2 }} /> Saving entry…</>
+            ) : (
+              <><HandCoins size={16} /> Submit Loan Record</>
+            )}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
-
-export default AddLoan;

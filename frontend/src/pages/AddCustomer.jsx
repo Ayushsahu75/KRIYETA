@@ -1,135 +1,126 @@
 // src/pages/AddCustomer.jsx
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { UserPlus, ArrowRight } from "lucide-react";
+import Success3DModal from "../components/Success3DModal";
 
-function AddCustomer() {
-  const [formData, setFormData] = useState({
-    name: "",
-    phone: "",
-    address: "",
-  });
-
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
+export default function AddCustomer() {
+  const [formData, setFormData] = useState({ name: "", phone: "", address: "" });
+  const [msg, setMsg]           = useState({ text: "", type: "" });
+  const [loading, setLoading]   = useState(false);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [createdClient, setCreatedClient] = useState("");
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
+  const handleChange = (e) => setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setMessage("");
+    setMsg({ text: "", type: "" });
 
     if (formData.phone.length !== 10) {
-      setMessage("❌ Phone number exactly 10 digits ka hona chahiye");
+      setMsg({ text: "Phone number must be exactly 10 digits.", type: "error" });
       setLoading(false);
       return;
     }
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch("http://localhost:5000/api/customers", {
+      const res = await fetch("http://localhost:5000/api/customers", {
         method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
         body: JSON.stringify(formData),
       });
-
-      if (response.status === 401) {
-        
-        window.location.href = "/login";
-        return;
-      }
-
-      const result = await response.json();
-
-      if (response.ok) {
-        setMessage(`✅ Customer "${result.name}" registered successfully!`);
-        setTimeout(() => navigate("/add-loan"), 1500);
+      if (res.status === 401) { window.location.href = "/login"; return; }
+      const result = await res.json();
+      if (res.ok) {
+        setCreatedClient(result.name);
+        setShowSuccess(true);
       } else {
-        setMessage(`❌ ${result.message}`);
+        setMsg({ text: result.message || "Registration failed.", type: "error" });
       }
-    } catch (error) {
-      setMessage("❌ Connection error.");
+    } catch {
+      setMsg({ text: "Connection error. Please try again.", type: "error" });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleSuccessClose = () => {
+    setShowSuccess(false);
+    navigate("/add-loan");
+  };
+
   return (
-    <div style={{ maxWidth: "500px", margin: "40px auto", padding: "30px", background: "white", borderRadius: "15px", boxShadow: "0 4px 20px rgba(0,0,0,0.06)" }}>
-      <h2 style={{ color: "#2c3e50", textAlign: "center", marginBottom: "30px" }}>👤 Register New Customer</h2>
+    <div className="form-page page-enter">
+      {/* 3D Success Popup Animation */}
+      <Success3DModal
+        isOpen={showSuccess}
+        onClose={handleSuccessClose}
+        title="Client Registered!"
+        subtitle={`"${createdClient}" has been successfully added to your client directory.`}
+      />
 
-      {message && (
-        <p style={{ 
-          padding: "12px", borderRadius: "8px", textAlign: "center", fontWeight: "bold",
-          backgroundColor: message.startsWith("✅") ? "#e8f5e9" : "#ffebee",
-          color: message.startsWith("✅") ? "#2e7d32" : "#c62828"
-        }}>
-          {message}
-        </p>
-      )}
-
-      <form onSubmit={handleSubmit} style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+      <div className="page-heading" style={{ marginBottom: 32 }}>
         <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>Full Name:</label>
-          <input
-            type="text"
-            name="name"
-            value={formData.name}
-            onChange={handleChange}
-            placeholder="e.g. Ramesh Kumar"
-            required
-            style={{ width: "100%", padding: "12px", border: "1px solid #ddd", borderRadius: "8px" }}
-          />
+          <h1>Register <span>Client</span></h1>
+          <p>Add a new customer to your directory</p>
         </div>
+      </div>
 
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>Mobile Number:</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            placeholder="10-digit number"
-            maxLength={10}
-            required
-            style={{ width: "100%", padding: "12px", border: "1px solid #ddd", borderRadius: "8px" }}
-          />
+      <div className="form-card">
+        {msg.text && <div className={`alert ${msg.type}`}>{msg.text}</div>}
+
+        <div style={{ marginBottom: 28 }}>
+          <p className="form-section-title">Client Information</p>
+          <form onSubmit={handleSubmit}>
+            <div className="form-grid" style={{ gap: 20 }}>
+              <div className="field-wrapper">
+                <label htmlFor="name">Full Name</label>
+                <input
+                  id="name" type="text" name="name"
+                  value={formData.name} onChange={handleChange}
+                  placeholder="e.g. Ramesh Kumar" required
+                />
+              </div>
+
+              <div className="field-wrapper">
+                <label htmlFor="phone">Mobile Number</label>
+                <input
+                  id="phone" type="tel" name="phone"
+                  value={formData.phone} onChange={handleChange}
+                  placeholder="10-digit number" maxLength={10} required
+                />
+                <span className="field-hint">Must be exactly 10 digits</span>
+              </div>
+
+              <div className="field-wrapper">
+                <label htmlFor="address">
+                  Home Address
+                  <span style={{ fontWeight: 400, letterSpacing: 0, textTransform: "none", fontSize: 11, marginLeft: 6, color: "var(--ink-subtle)" }}>(optional)</span>
+                </label>
+                <textarea
+                  id="address" name="address"
+                  value={formData.address} onChange={handleChange}
+                  placeholder="Village / Town / City" rows={3}
+                />
+              </div>
+
+              <button
+                className="primary-button" type="submit" disabled={loading}
+                style={{ width: "100%", height: 50, fontSize: 12, letterSpacing: "0.14em" }}
+              >
+                {loading ? (
+                  <><span className="spinner" style={{ width: 16, height: 16, borderWidth: 2 }} /> Saving…</>
+                ) : (
+                  <><UserPlus size={15} /> Register Client <ArrowRight size={14} /></>
+                )}
+              </button>
+            </div>
+          </form>
         </div>
-
-        <div>
-          <label style={{ fontWeight: "600", display: "block", marginBottom: "8px" }}>Home Address:</label>
-          <textarea
-            name="address"
-            value={formData.address}
-            onChange={handleChange}
-            placeholder="Vill/Town/City"
-            rows={3}
-            style={{ width: "100%", padding: "12px", border: "1px solid #ddd", borderRadius: "8px", resize: "none" }}
-          />
-        </div>
-
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: "15px",
-            background: loading ? "#ccc" : "#3498db",
-            color: "white", border: "none", borderRadius: "8px",
-            cursor: loading ? "not-allowed" : "pointer",
-            fontWeight: "bold", fontSize: "1rem"
-          }}
-        >
-          {loading ? "⌛ Saving..." : "Register Customer"}
-        </button>
-      </form>
+      </div>
     </div>
   );
 }
-
-export default AddCustomer;

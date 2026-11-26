@@ -1,12 +1,23 @@
-// src/pages/LoanList.jsx — with Auth Loop Fix
+// src/pages/LoanList.jsx
 import { useState, useEffect } from "react";
+import { CheckCircle2, Camera, Gem, ArrowUpDown } from "lucide-react";
+import Success3DModal from "../components/Success3DModal";
+import SettleLoanModal from "../components/SettleLoanModal";
 
-function LoanList() {
-  const [loans, setLoans]     = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError]     = useState("");
-  const [search, setSearch]   = useState("");
-  const [filter, setFilter]   = useState("all"); 
+export default function LoanList() {
+  const [loans, setLoans]         = useState([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState("");
+  const [search, setSearch]       = useState("");
+  const [filter, setFilter]       = useState("all");
+  
+  // Settle modal state
+  const [selectedLoan, setSelectedLoan] = useState(null);
+  const [settleLoading, setSettleLoading] = useState(false);
+
+  // Success 3D modal state
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [settledCustomer, setSettledCustomer] = useState("");
 
   useEffect(() => { fetchLoans(); }, []);
 
@@ -14,33 +25,35 @@ function LoanList() {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res  = await fetch("http://localhost:5000/api/loans", {
-        headers: { "Authorization": `Bearer ${token}` }
+      const res = await fetch("http://localhost:5000/api/loans", {
+        headers: { Authorization: `Bearer ${token}` },
       });
-
-      if (res.status === 401) {
-        
-        window.location.href = "/login";
-        return;
-      }
-
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       if (res.ok) setLoans(data);
-      else setError("Loans load nahi hue.");
+      else setError("Failed to load records.");
     } catch {
-      setError("Server se connect nahi ho paya.");
+      setError("Could not connect to server.");
     } finally {
       setLoading(false);
     }
   };
 
-  const closeLoan = async (id) => {
-    if (!window.confirm("Kya aap is loan ko close karna chahte ho?")) return;
+  const handleOpenSettle = (loan) => {
+    setSelectedLoan(loan);
+  };
+
+  const handleConfirmSettle = async (id, customerName, paidAmount) => {
+    setSettleLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/loans/${id}/close`, { 
+      const res = await fetch(`http://localhost:5000/api/loans/${id}/close`, {
         method: "PUT",
-        headers: { "Authorization": `Bearer ${token}` }
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ paidAmount }),
       });
 
       if (res.status === 401) {
@@ -48,134 +61,179 @@ function LoanList() {
         return;
       }
 
-      if (res.ok) fetchLoans();
-      else alert("❌ Loan close nahi hua.");
+      if (res.ok) {
+        setSelectedLoan(null);
+        setSettledCustomer(customerName || "Customer");
+        setShowSuccess(true);
+        fetchLoans();
+      } else {
+        const data = await res.json();
+        alert(data.message || "Failed to settle loan.");
+      }
     } catch {
-      alert("❌ Server error.");
+      alert("Server connection error.");
+    } finally {
+      setSettleLoading(false);
     }
   };
 
-  const filtered = loans.filter((loan) => {
-    const name = loan.customerId?.name?.toLowerCase() || "";
-    const matchesSearch = name.includes(search.toLowerCase());
-    const matchesFilter = filter === "all" || loan.status === filter;
-    return matchesSearch && matchesFilter;
+  const filtered = loans.filter((l) => {
+    const name = l.customerId?.name?.toLowerCase() || "";
+    return name.includes(search.toLowerCase()) && (filter === "all" || l.status === filter);
   });
 
-  if (loading) return <p style={{ padding: "40px" }}>🔍 Searching records...</p>;
+  if (loading) return <div className="loading-wrap"><div className="spinner" />Loading records…</div>;
 
   return (
-    <div style={{ padding: "10px" }}>
-      <h2 style={{ color: "#2c3e50", marginBottom: "20px" }}>📋 All Girvi Records</h2>
+    <div className="page-enter">
+      {/* 3D Custom Settlement Confirmation Modal */}
+      <SettleLoanModal
+        isOpen={Boolean(selectedLoan)}
+        onClose={() => !settleLoading && setSelectedLoan(null)}
+        loan={selectedLoan}
+        onConfirm={handleConfirmSettle}
+        loading={settleLoading}
+      />
 
-      {/* Control Bar */}
-      <div style={{ display: "flex", gap: "12px", marginBottom: "25px", flexWrap: "wrap", background: "#fff", padding: "15px", borderRadius: "8px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}>
+      {/* 3D Success Popup Animation */}
+      <Success3DModal
+        isOpen={showSuccess}
+        onClose={() => setShowSuccess(false)}
+        title="Loan Settled!"
+        subtitle={`The loan for "${settledCustomer}" has been marked as fully paid and closed.`}
+      />
+
+      <div className="page-heading">
+        <div>
+          <h1>Loan <span>Records</span></h1>
+          <p>All girvi &amp; pledge entries — your complete ledger</p>
+        </div>
+      </div>
+
+      {/* Control bar */}
+      <div className="control-bar">
         <input
+          className="search-input"
           type="text"
-          placeholder="🔍 Search by customer name..."
+          placeholder="Search by client name…"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          style={{ flex: 1, padding: "10px", borderRadius: "6px", border: "1px solid #ddd", minWidth: "250px" }}
         />
         <select
+          className="filter-select"
           value={filter}
           onChange={(e) => setFilter(e.target.value)}
-          style={{ padding: "10px", borderRadius: "6px", border: "1px solid #ddd", cursor: "pointer" }}
         >
-          <option value="all">📁 All Status</option>
-          <option value="active">🟢 Active Only</option>
-          <option value="closed">⚪ Closed Only</option>
+          <option value="all">All Records</option>
+          <option value="active">Active Only</option>
+          <option value="closed">Settled Only</option>
         </select>
-        <span style={{ alignSelf: "center", fontWeight: "bold", color: "#3498db" }}>
-          Count: {filtered.length}
+        <span className="count-badge">
+          {filtered.length} {filtered.length === 1 ? "record" : "records"}
         </span>
       </div>
 
+      {error && <div className="alert error">{error}</div>}
+
       {filtered.length === 0 ? (
-        <div style={{ textAlign: "center", padding: "50px", background: "#fff", borderRadius: "10px" }}>
-          <p style={{ fontSize: "1.2rem", color: "#95a5a6" }}>No records found matching your criteria.</p>
+        <div className="empty-state">
+          <div className="empty-state-icon"><Gem size={28} strokeWidth={1.2} /></div>
+          <h3>No records found</h3>
+          <p>{search ? "Try a different search term." : "No loan entries match the current filter."}</p>
         </div>
       ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: "20px" }}>
+        <div className="cards-grid">
           {filtered.map((loan) => (
-            <div key={loan._id} style={{
-              border: "1px solid #eee",
-              borderRadius: "12px",
-              padding: "20px",
-              background: loan.status === "closed" ? "#fdfdfd" : "white",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.04)",
-              position: "relative",
-              overflow: "hidden"
-            }}>
-              {/* Status Banner */}
-              <div style={{
-                position: "absolute", top: "15px", right: "-35px",
-                padding: "5px 40px", transform: "rotate(45deg)",
-                background: loan.status === "active" ? "#4CAF50" : "#95a5a6",
-                color: "white", fontSize: "10px", fontWeight: "bold"
-              }}>
-                {loan.status.toUpperCase()}
-              </div>
-
+            <article key={loan._id} className={`loan-card${loan.status === "closed" ? " closed" : ""}`}>
+              {/* Jewellery image */}
               {loan.imageUrl ? (
                 <img
+                  className="loan-card-image"
                   src={`http://localhost:5000${loan.imageUrl}`}
-                  alt="Jewellery"
-                  style={{ width: "100%", height: "180px", objectFit: "cover", borderRadius: "8px", marginBottom: "15px", border: "1px solid #eee" }}
+                  alt={`${loan.jewelleryType} belonging to ${loan.customerId?.name}`}
                 />
               ) : (
-                <div style={{ width: "100%", height: "140px", background: "#f8f9fa", borderRadius: "8px", display: "flex", alignItems: "center", justifyContent: "center", color: "#bdc3c7", marginBottom: "15px" }}>
-                  📷 No Image Available
+                <div className="loan-card-image-placeholder">
+                  <Camera size={26} strokeWidth={1.2} />
+                  <span>No photograph</span>
                 </div>
               )}
 
-              <h3 style={{ margin: "0 0 8px 0", color: "#2c3e50" }}>👤 {loan.customerId?.name || "Unknown"}</h3>
-              <p style={{ margin: "4px 0", color: "#7f8c8d" }}>📞 {loan.customerId?.phone}</p>
-              <p style={{ margin: "4px 0", fontStyle: "italic" }}>💍 {loan.jewelleryType} | {loan.weight}g | {loan.carat}K</p>
+              <div className="loan-card-body">
+                {/* Header */}
+                <div className="loan-card-header">
+                  <div>
+                    <h3 className="loan-card-name">{loan.customerId?.name || "Unknown"}</h3>
+                    <p className="loan-card-phone">{loan.customerId?.phone}</p>
+                  </div>
+                  <span className={`chip ${loan.status}`}>
+                    <span style={{
+                      width: 5, height: 5, borderRadius: "50%",
+                      background: loan.status === "active" ? "var(--active-text)" : "var(--closed-text)",
+                      display: "inline-block", flexShrink: 0,
+                    }} />
+                    {loan.status === "active" ? "Active" : "Settled"}
+                  </span>
+                </div>
 
-              <div style={{ borderTop: "1px solid #eee", margin: "15px 0", paddingTop: "15px" }}>
-                <p style={{ margin: "4px 0", display: "flex", justifyContent: "space-between" }}>
-                  <span>Principal:</span> <strong>₹{loan.amount}</strong>
-                </p>
-                <p style={{ margin: "4px 0", display: "flex", justifyContent: "space-between" }}>
-                  <span>Rate:</span> <span>{loan.interestRate}% / month</span>
-                </p>
-                <p style={{ margin: "4px 0", display: "flex", justifyContent: "space-between", color: "#e67e22" }}>
-                  <span>Interest:</span> <span>₹{loan.interest}</span>
-                </p>
-                <p style={{ margin: "8px 0 0", display: "flex", justifyContent: "space-between", fontSize: "1.1rem", borderTop: "2px solid #3498db", paddingTop: "8px" }}>
-                  <span>Total Payable:</span> <strong style={{ color: "#2c3e50" }}>₹{loan.total}</strong>
-                </p>
+                {/* Jewellery meta pill row */}
+                <div className="loan-card-meta">
+                  <div className="loan-meta-item">
+                    <div className="loan-meta-label">Item</div>
+                    <div className="loan-meta-value">{loan.jewelleryType}</div>
+                  </div>
+                  <div className="loan-meta-item">
+                    <div className="loan-meta-label">Weight</div>
+                    <div className="loan-meta-value">{loan.weight}g</div>
+                  </div>
+                  <div className="loan-meta-item">
+                    <div className="loan-meta-label">Purity</div>
+                    <div className="loan-meta-value">{loan.carat}K</div>
+                  </div>
+                </div>
+
+                {/* Financials */}
+                <div className="loan-financials">
+                  <div className="loan-row">
+                    <span className="loan-row-label">Principal</span>
+                    <span className="loan-row-value">₹{Number(loan.amount).toLocaleString("en-IN")}</span>
+                  </div>
+                  <div className="loan-row">
+                    <span className="loan-row-label">Rate</span>
+                    <span className="loan-row-value">{loan.interestRate}% / month</span>
+                  </div>
+                  <div className="loan-row">
+                    <span className="loan-row-label">Interest</span>
+                    <span className="loan-row-value" style={{ color: "var(--gold-dark)" }}>
+                      ₹{Number(loan.interest).toLocaleString("en-IN")}
+                    </span>
+                  </div>
+                  <div className="loan-total-row">
+                    <span className="loan-total-label">Total Payable</span>
+                    <span className="loan-total-value">₹{Number(loan.total).toLocaleString("en-IN")}</span>
+                  </div>
+                </div>
+
+                {/* CTA / Settled status */}
+                {loan.status === "active" && (
+                  <button className="close-loan-btn" onClick={() => handleOpenSettle(loan)}>
+                    <CheckCircle2 size={16} strokeWidth={2.2} />
+                    Mark as Settled
+                  </button>
+                )}
+                {loan.status === "closed" && (
+                  <div className="settled-tag">
+                    ✓ Settled on {new Date(loan.closeDate).toLocaleDateString("en-IN", {
+                      day: "numeric", month: "short", year: "numeric",
+                    })}
+                    {loan.paidAmount ? ` • Paid: ₹${Number(loan.paidAmount).toLocaleString("en-IN")}` : ""}
+                  </div>
+                )}
               </div>
-
-              {loan.status === "active" && (
-                <button
-                  onClick={() => closeLoan(loan._id)}
-                  style={{
-                    width: "100%", padding: "12px",
-                    backgroundColor: "#f44336",
-                    color: "white", border: "none", borderRadius: "8px",
-                    cursor: "pointer", fontWeight: "bold", marginTop: "10px",
-                    transition: "background 0.2s"
-                  }}
-                  onMouseOver={(e) => e.target.style.background = "#d32f2f"}
-                  onMouseOut={(e) => e.target.style.background = "#f44336"}
-                >
-                  ✅ Mark as Closed
-                </button>
-              )}
-
-              {loan.status === "closed" && (
-                <p style={{ fontSize: "12px", color: "#7f8c8d", textAlign: "center", marginTop: "15px", background: "#f1f2f6", padding: "8px", borderRadius: "5px" }}>
-                  🔒 Settled on: {new Date(loan.closeDate).toLocaleDateString("en-IN")}
-                </p>
-              )}
-            </div>
+            </article>
           ))}
         </div>
       )}
     </div>
   );
 }
-
-export default LoanList;
