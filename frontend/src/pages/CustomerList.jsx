@@ -17,7 +17,7 @@ export default function CustomerList() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/customers", {
+      const res = await fetch("https://kriyeta.onrender.com/api/customers", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "/login"; return; }
@@ -35,7 +35,7 @@ export default function CustomerList() {
     if (!window.confirm("Remove this client? Associated loan records may be affected.")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`http://localhost:5000/api/customers/${id}`, {
+      const res = await fetch(`https://kriyeta.onrender.com/api/customers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

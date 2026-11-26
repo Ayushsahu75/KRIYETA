@@ -19,7 +19,7 @@ export default function AddLoan() {
     (async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:5000/api/customers", {
+        const res = await fetch("https://kriyeta.onrender.com/api/customers", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401) { window.location.href = "/login"; return; }
@@ -47,7 +47,7 @@ export default function AddLoan() {
       if (selectedFile) data.append("image", selectedFile);
 
       const token = localStorage.getItem("token");
-      const res = await fetch("http://localhost:5000/api/loans", {
+      const res = await fetch("https://kriyeta.onrender.com/api/loans", {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: data,

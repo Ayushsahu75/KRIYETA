@@ -86,7 +86,7 @@ function LoanCard({ loan, customerName, customerPhone, onSettle }) {
       {loan.imageUrl ? (
         <img
           className="loan-card-image"
-          src={`http://localhost:5000${loan.imageUrl}`}
+          src={`https://kriyeta.onrender.com${loan.imageUrl}`}
           alt={`${loan.jewelleryType} belonging to ${loan.customerId?.name || customerName}`}
         />
       ) : (
@@ -193,7 +193,7 @@ export default function LoanList() {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("http://localhost:5000/api/loans", {
+      const res = await fetch("https://kriyeta.onrender.com/api/loans", {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "/login"; return; }
@@ -215,7 +215,7 @@ export default function LoanList() {
     setSettleLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`http://localhost:5000/api/loans/${id}/close`, {
+      const res = await fetch(`https://kriyeta.onrender.com/api/loans/${id}/close`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

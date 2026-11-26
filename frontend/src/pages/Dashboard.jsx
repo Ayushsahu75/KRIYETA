@@ -58,7 +58,7 @@ export default function Dashboard() {
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const res = await fetch("http://localhost:5000/api/loans/stats", {
+        const res = await fetch("https://kriyeta.onrender.com/api/loans/stats", {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401) { window.location.href = "/login"; return; }
