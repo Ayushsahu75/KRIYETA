@@ -1,95 +1,142 @@
-﻿# KRIYETA â€” Jewellery Pawn (Girvi) Management System
+# KRIYETA
 
-A beginner-friendly MERN stack skeleton to manage jewellery loan records.
+**Jewellery Pawn (Girvi) Management System**
 
----
+KRIYETA is a web app for jewellery businesses to manage customers, gold-backed loan records, pledged items, interest estimates, and settlements from one dashboard. It is being actively developed, with AI-assisted workflows and additional business features planned.
 
-## Folder Structure
+> **Project status:** Core customer and loan workflows are in progress. Items in the roadmap are planned and are not represented as current features.
 
-```
+## What it does
+
+- View a dashboard with loan totals, active/settled counts, and estimated interest.
+- Register and browse customers.
+- Create loan records with jewellery type, weight, purity, loan terms, and an optional photo.
+- Browse loan records by customer. Records with the same normalized name or phone number are grouped together; selecting a customer shows their loan cards.
+- See each loan's start date, principal, monthly interest rate, current interest estimate, and total payable.
+- Settle and close an active loan while recording the amount received.
+- Sign in with email and password or Google OAuth.
+
+Interest shown in the app is an estimate calculated from the loan amount, monthly rate, and elapsed time. Confirm settlement amounts with the customer before closing a loan.
+
+## Technology
+
+| Area | Technologies |
+| --- | --- |
+| Frontend | React 18, Vite, React Router, Lucide React |
+| Authentication UI | Google OAuth (`@react-oauth/google`) |
+| Backend | Node.js, Express |
+| Database | MongoDB with Mongoose |
+| Authentication/API protection | JWT and bcrypt |
+| Jewellery photo upload | Multer; files are stored locally during development |
+
+## Repository structure
+
+```text
 KRIYETA/
-â”œâ”€â”€ backend/
-â”‚   â”œâ”€â”€ config/
-â”‚   â”‚   â””â”€â”€ db.js             â† MongoDB connection
-â”‚   â”œâ”€â”€ models/
-â”‚   â”‚   â”œâ”€â”€ Customer.js       â† Customer schema
-â”‚   â”‚   â””â”€â”€ Loan.js           â† Loan schema
-â”‚   â”œâ”€â”€ controllers/
-â”‚   â”‚   â”œâ”€â”€ customerController.js
-â”‚   â”‚   â””â”€â”€ loanController.js
-â”‚   â”œâ”€â”€ routes/
-â”‚   â”‚   â”œâ”€â”€ customerRoutes.js
-â”‚   â”‚   â””â”€â”€ loanRoutes.js
-â”‚   â”œâ”€â”€ .env                  â† Environment variables
-â”‚   â”œâ”€â”€ server.js             â† Express entry point
-â”‚   â””â”€â”€ package.json
-â”‚
-â””â”€â”€ frontend/
-    â”œâ”€â”€ src/
-    â”‚   â”œâ”€â”€ pages/
-    â”‚   â”‚   â”œâ”€â”€ AddLoan.jsx   â† Form to add a loan
-    â”‚   â”‚   â””â”€â”€ LoanList.jsx  â† Table showing all loans
-    â”‚   â”œâ”€â”€ App.jsx           â† Root component + navigation
-    â”‚   â””â”€â”€ main.jsx          â† React entry point
-    â”œâ”€â”€ index.html
-    â”œâ”€â”€ vite.config.js
-    â””â”€â”€ package.json
+├── backend/
+│   ├── config/              # MongoDB connection
+│   ├── controllers/         # Auth, customer, and loan logic
+│   ├── middleware/          # JWT protection and image upload
+│   ├── models/              # User, Customer, and Loan schemas
+│   ├── routes/              # Express API routes
+│   ├── uploads/             # Locally uploaded images
+│   ├── server.js            # Express entry point
+│   └── package.json
+└── frontend/
+    ├── src/
+    │   ├── components/      # Shared UI and protected-route components
+    │   ├── pages/           # Dashboard, loans, customers, and auth screens
+    │   ├── App.jsx          # App layout and routes
+    │   ├── main.jsx         # React entry point
+    │   └── styles.css
+    ├── index.html
+    ├── vite.config.js
+    └── package.json
 ```
 
----
+## Run locally
 
-## Setup & Running
+### Requirements
 
-### Step 1 â€” Backend
+- Node.js and npm
+- A MongoDB database, either local or MongoDB Atlas
+- A Google OAuth client ID for Google sign-in
+
+### 1. Configure the backend
+
+Create `backend/.env` with:
+
+```env
+PORT=5000
+MONGO_URI=your_mongodb_connection_string
+JWT_SECRET=replace_with_a_long_random_secret
+JWT_EXPIRES_IN=7d
+GOOGLE_CLIENT_ID=your_google_oauth_client_id
+```
+
+Install dependencies and start the API:
 
 ```bash
 cd backend
 npm install
-npm run dev    # uses nodemon for auto-restart
+npm run dev
 ```
 
-> Make sure MongoDB is running locally, or update `MONGO_URI` in `.env` with your Atlas connection string.
+The API listens on `http://localhost:5000` by default.
 
-### Step 2 â€” Frontend
+### 2. Configure and start the frontend
+
+Create `frontend/.env`:
+
+```env
+VITE_GOOGLE_CLIENT_ID=your_google_oauth_client_id
+```
+
+Use the same Google OAuth client ID in both environment files. Add `http://localhost:3000` as an authorized JavaScript origin in the Google Cloud OAuth client settings.
+
+In another terminal:
 
 ```bash
 cd frontend
 npm install
-npm run dev    # starts Vite dev server on http://localhost:3000
+npm run dev
 ```
 
----
+Open `http://localhost:3000`.
 
-## API Endpoints
+Never commit `.env` files, passwords, OAuth secrets, or production credentials. The frontend currently calls the local API at `http://localhost:5000`; configure a production API URL and the backend's allowed CORS origins before deploying.
 
-| Method | Endpoint         | Description          |
-|--------|------------------|----------------------|
-| POST   | /api/customers   | Create a new customer |
-| POST   | /api/loans       | Create a new loan     |
-| GET    | /api/loans       | Get all loans         |
+## API overview
 
----
+Customer and loan routes require a bearer token. Authentication routes are public.
 
-## What to Build Next (Step by Step)
+| Method | Endpoint | Purpose |
+| --- | --- | --- |
+| POST | `/api/auth/register` | Register with email and password |
+| POST | `/api/auth/login` | Sign in with email and password |
+| POST | `/api/auth/google` | Sign in with a Google credential |
+| GET | `/api/customers` | List customers |
+| POST | `/api/customers` | Create a customer |
+| PUT | `/api/customers/:id` | Update a customer |
+| DELETE | `/api/customers/:id` | Delete a customer, if allowed |
+| GET | `/api/loans` | List loans with current interest estimates |
+| GET | `/api/loans/stats` | Get dashboard loan statistics |
+| POST | `/api/loans` | Create a loan; accepts multipart form data and an optional `image` |
+| PUT | `/api/loans/:id/close` | Close a loan; accepts `paidAmount` in JSON |
 
-1. **Customer dropdown** â€” Replace the Customer ID text field with a `<select>` that auto-loads from `GET /api/customers`
-2. **Interest calculator** â€” Add a function: `interest = (amount Ã— interestRate Ã— months) / 100`
-3. **Image upload** â€” Add `multer` to the backend and `<input type="file">` to the form
-4. **Close loan** â€” Add a `PATCH /api/loans/:id` endpoint to update status to `"closed"`
-5. **SMS alerts** â€” Integrate Twilio or Fast2SMS for payment reminders
-6. **Deployment** â€” Deploy backend to Render, frontend to Vercel, DB to MongoDB Atlas
+## Roadmap
 
-## Clerk authentication setup
+KRIYETA is expected to grow beyond the current customer and loan workflows. Planned work includes:
 
-The frontend uses ClerkJS. Configure `CLERK_PUBLISHABLE_KEY` in `backend/.env` (see `backend/.env.example`). The frontend retrieves this public key from `/api/config/clerk`. The Express API verifies Clerk session tokens with `@clerk/express`.
+- **AI-assisted record search:** ask questions in natural language to find relevant customer or loan records.
+- **AI summaries and insights:** summarize portfolio activity and highlight records that may need attention.
+- **Document assistance:** explore OCR to extract details from uploaded documents, with a person reviewing and confirming extracted data before it is saved.
+- **Business features:** printable loan receipts, reports and exports, payment reminders, audit history, and staff roles.
+- **Mobile access:** improve the responsive experience and explore an installable PWA.
+- **Production readiness:** configurable API URLs, hosted image storage, database backups, and deployment documentation.
 
-Add the Secret Key from the same Clerk application to `backend/.env`:
+AI features are future plans, not currently available. Any future AI workflow should respect customer-data privacy and keep important financial actions under human review.
 
-```ini
-CLERK_SECRET_KEY=sk_test_...
-```
+## Deployment notes
 
-Keep the Secret Key private and never put it in frontend files. In Clerk, allow the Vite frontend origin, usually `http://localhost:5173`. Start backend and frontend in separate terminals with `npm run dev` in each folder.
-
-The old `/api/auth/login` and `/api/auth/register` endpoints remain available, but the frontend login now uses Clerk. Customer and loan endpoints require a valid Clerk session.
-
+The app is currently configured for local development. A production setup will need a hosted MongoDB database, an HTTPS backend, a frontend configured with the deployed API URL, appropriate CORS settings, and persistent/object storage for uploaded images. Do not rely on the local `backend/uploads` directory for production file storage.
