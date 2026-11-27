@@ -4,6 +4,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { Gem, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import GoogleAuthButton from "../components/GoogleAuthButton";
 import Success3DModal from "../components/Success3DModal";
+import API_URL from "../api";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -18,7 +19,7 @@ export default function Login() {
     setError("");
     setLoading(true);
     try {
-      const res  = await fetch("https://kriyeta.onrender.com/api/auth/login", {
+      const res  = await fetch(`${API_URL}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),

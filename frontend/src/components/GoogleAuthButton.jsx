@@ -1,12 +1,13 @@
 import { GoogleLogin } from "@react-oauth/google";
 import { useNavigate } from "react-router-dom";
+import API_URL from "../api";
 
 function GoogleAuthButton({ onError }) {
   const navigate = useNavigate();
 
   const handleSuccess = async (credentialResponse) => {
     try {
-      const response = await fetch("https://kriyeta.onrender.com/api/auth/google", {
+      const response = await fetch(`${API_URL}/api/auth/google`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ credential: credentialResponse.credential }),

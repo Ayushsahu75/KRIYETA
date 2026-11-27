@@ -1,6 +1,7 @@
 // src/pages/CustomerList.jsx
 import { useState, useEffect } from "react";
 import { Phone, MapPin, Trash2, Users } from "lucide-react";
+import API_URL from "../api";
 
 const initials = (name = "") =>
   name.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase() || "?";
@@ -17,7 +18,7 @@ export default function CustomerList() {
     setLoading(true);
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch("https://kriyeta.onrender.com/api/customers", {
+      const res = await fetch(`${API_URL}/api/customers`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "/login"; return; }
@@ -35,7 +36,7 @@ export default function CustomerList() {
     if (!window.confirm("Remove this client? Associated loan records may be affected.")) return;
     try {
       const token = localStorage.getItem("token");
-      const res = await fetch(`https://kriyeta.onrender.com/api/customers/${id}`, {
+      const res = await fetch(`${API_URL}/api/customers/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });

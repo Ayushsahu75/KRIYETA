@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Gem, ShieldCheck, TrendingUp, Users } from "lucide-react";
 import GoogleAuthButton from "../components/GoogleAuthButton";
+import API_URL from "../api";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -22,7 +23,7 @@ export default function Signup() {
     }
     setLoading(true);
     try {
-      const res  = await fetch("https://kriyeta.onrender.com/api/auth/register", {
+      const res  = await fetch(`${API_URL}/api/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),

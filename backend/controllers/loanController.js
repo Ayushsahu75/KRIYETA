@@ -1,6 +1,7 @@
 // controllers/loanController.js
 
 const Loan = require("../models/Loan");
+const Customer = require("../models/Customer");
 
 // Interest Calculation Helper
 function calculateInterest(amount, rate, startDate) {
@@ -21,12 +22,16 @@ const createLoan = async (req, res) => {
   try {
     const { customerId, jewelleryType, weight, carat, amount, interestRate, startDate } = req.body;
 
+    const customer = await Customer.findOne({ _id: customerId, userId: req.user.id });
+    if (!customer) return res.status(404).json({ message: "Customer not found" });
+
     let imageUrl = "";
     if (req.file) {
       imageUrl = `/uploads/${req.file.filename}`;
     }
 
     const loan = await Loan.create({
+      userId: req.user.id,
       customerId, jewelleryType, weight, carat, amount, interestRate,
       startDate: startDate || new Date(),
       imageUrl,
@@ -42,7 +47,7 @@ const createLoan = async (req, res) => {
 // ✅ Get All Loans + Live Interest
 const getAllLoans = async (req, res) => {
   try {
-    const loans = await Loan.find().populate("customerId", "name phone address");
+    const loans = await Loan.find({ userId: req.user.id }).populate("customerId", "name phone address");
 
     const updatedLoans = loans.map((loan) => {
       const calc = calculateInterest(Number(loan.amount), Number(loan.interestRate), loan.startDate);
@@ -61,7 +66,7 @@ const closeLoan = async (req, res) => {
     const { id } = req.params;
     const { paidAmount } = req.body; // Frontend se final amount aayega
 
-    const loan = await Loan.findById(id);
+    const loan = await Loan.findOne({ _id: id, userId: req.user.id });
     if (!loan) return res.status(404).json({ message: "Loan not found" });
     if (loan.status === "closed") return res.status(400).json({ message: "Loan already closed" });
 
@@ -79,7 +84,7 @@ const closeLoan = async (req, res) => {
 // ✅ Dashboard Stats
 const getStats = async (req, res) => {
   try {
-    const loans = await Loan.find();
+    const loans = await Loan.find({ userId: req.user.id });
 
     let totalAmount   = 0;
     let totalInterest = 0;

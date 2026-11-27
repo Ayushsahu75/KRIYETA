@@ -5,6 +5,7 @@ import {
   HandCoins, CheckCircle2, IndianRupee, TrendingUp,
   Plus, UserPlus, List, ArrowRight, Users
 } from "lucide-react";
+import API_URL from "../api";
 
 /* ── 3D Interactive Tilt Stat Card ── */
 const StatCard = ({ label, value, icon: Icon, isCurrency }) => {
@@ -58,7 +59,7 @@ export default function Dashboard() {
       const token = localStorage.getItem("token");
       if (!token) return;
       try {
-        const res = await fetch("https://kriyeta.onrender.com/api/loans/stats", {
+        const res = await fetch(`${API_URL}/api/loans/stats`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401) { window.location.href = "/login"; return; }

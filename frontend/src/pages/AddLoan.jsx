@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { HandCoins, Upload, CheckCircle2 } from "lucide-react";
 import Success3DModal from "../components/Success3DModal";
+import API_URL from "../api";
 
 export default function AddLoan() {
   const [formData, setFormData] = useState({
@@ -19,7 +20,7 @@ export default function AddLoan() {
     (async () => {
       try {
         const token = localStorage.getItem("token");
-        const res = await fetch("https://kriyeta.onrender.com/api/customers", {
+        const res = await fetch(`${API_URL}/api/customers`, {
           headers: { Authorization: `Bearer ${token}` },
         });
         if (res.status === 401) { window.location.href = "/login"; return; }
@@ -47,7 +48,7 @@ export default function AddLoan() {
       if (selectedFile) data.append("image", selectedFile);
 
       const token = localStorage.getItem("token");
-      const res = await fetch("https://kriyeta.onrender.com/api/loans", {
+      const res = await fetch(`${API_URL}/api/loans`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: data,

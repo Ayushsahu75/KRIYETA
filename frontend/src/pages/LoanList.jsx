@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import Success3DModal from "../components/Success3DModal";
 import SettleLoanModal from "../components/SettleLoanModal";
+import API_URL from "../api";
 
 const normalizeName = (value) => String(value || "").trim().replace(/\s+/g, " ").toLowerCase();
 const normalizePhone = (value) => String(value || "").replace(/\D/g, "");
@@ -86,7 +87,7 @@ function LoanCard({ loan, customerName, customerPhone, onSettle }) {
       {loan.imageUrl ? (
         <img
           className="loan-card-image"
-          src={`https://kriyeta.onrender.com${loan.imageUrl}`}
+          src={`${API_URL}${loan.imageUrl}`}
           alt={`${loan.jewelleryType} belonging to ${loan.customerId?.name || customerName}`}
         />
       ) : (
@@ -193,7 +194,7 @@ export default function LoanList() {
     setLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch("https://kriyeta.onrender.com/api/loans", {
+      const res = await fetch(`${API_URL}/api/loans`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "/login"; return; }
@@ -215,7 +216,7 @@ export default function LoanList() {
     setSettleLoading(true);
     const token = localStorage.getItem("token");
     try {
-      const res = await fetch(`https://kriyeta.onrender.com/api/loans/${id}/close`, {
+      const res = await fetch(`${API_URL}/api/loans/${id}/close`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
